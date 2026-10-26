@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RespiroQuest 3D - Petualangan Sistem Pernapasan</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        clay: {
+                            cyan: '#00F0FF',
+                            pink: '#FF007A',
+                            purple: '#7B2CBF',
+                            yellow: '#FFD600',
+                            green: '#00E676',
+                            bg: '#0F172A'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        jakarta: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
+            color: #f8fafc;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        /* Claymorphism Styling Effects */
+        .clay-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 4px solid rgba(255, 255, 255, 0.15);
+            border-radius: 2rem;
+            box-shadow: 
+                8px 8px 20px rgba(0, 0, 0, 0.5),
+                inset -6px -6px 12px rgba(0, 0, 0, 0.4),
+                inset 6px 6px 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .clay-btn {
+            position: relative;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 1.25rem;
+            box-shadow: 
+                0 8px 0 rgba(0,0,0,0.3),
+                inset 0 4px 6px rgba(255,255,255,0.4),
+                inset 0 -4px 6px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .clay-btn:active {
+            transform: translateY(6px);
+            box-shadow: 
+                0 2px 0 rgba(0,0,0,0.3),
+                inset 0 4px 6px rgba(255,255,255,0.4),
+                inset 0 -4px 6px rgba(0,0,0,0.3);
+        }
+
+        .clay-badge {
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                inset 0 -2px 4px rgba(0,0,0,0.3),
+                0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 3D Float Animation for Clay Characters */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6)); }
+            50% { filter: drop-shadow(0 0 25px rgba(255, 0, 122, 0.8)); }
+        }
+        .animate-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        /* Print styles for Certificate */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-modal, #certificate-modal * {
+                visibility: visible;
+            }
+            #certificate-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen overflow-x-hidden p-3 md:p-6">
+
+    <!-- Header / Navbar -->
+    <header class="max-w-5xl mx-auto w-full flex justify-between items-center mb-6 clay-card p-4">
+        <div class="flex items-center gap-3">
+            <!-- Avatar Mascot -->
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-2xl shadow-lg border-2 border-white/40 animate-float">
+                🫁
+            </div>
+            <div>
+                <h1 class="font-fredoka text-xl md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-400 to-yellow-300 font-bold">
+                    RESPIRO-QUEST 3D
+                </h1>
+                <p class="text-xs text-cyan-200 font-semibold tracking-wider uppercase">Sistem Pernapasan SMP Kelas 8</p>
+            </div>
+        </div>
+
+        <!-- Student Info Badge & Audio Toggle -->
+        <div class="flex items-center gap-3">
+            <div id="student-badge" class="hidden md:flex flex-col items-end bg-slate-800/80 px-4 py-1.5 rounded-xl border border-white/10">
+                <span id="display-student-name" class="font-bold text-sm text-yellow-300">-</span>
+                <span id="display-student-class" class="text-xs text-slate-400">-</span>
+            </div>
+            <button id="sound-btn" onclick="toggleSound()" class="w-10 h-10 rounded-xl bg-slate-700/80 hover:bg-slate-600 border border-white/20 flex items-center justify-center text-cyan-300 transition">
+                <i class="fas fa-volume-up" id="sound-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col justify-center">
+
+        <!-- STEP 1: ONBOARDING / LOGIN FORM -->
+        <div id="screen-login" class="clay-card p-6 md:p-10 text-center max-w-xl mx-auto w-full relative overflow-hidden">
+            <!-- Futuristic Graphic BG Elements -->
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-pink-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl"></div>
+
+            <!-- Clay Mascot Visual -->
+            <div class="mb-6 relative inline-block">
+                <div class="w-28 h-28 mx-auto rounded-3xl bg-gradient-to-br from-pink-500 via-purple-600 to-cyan-400 p-1 shadow-2xl animate-glow">
+                    <div class="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center text-6xl">
+                        🤖
+                    </div>
+                </div>
+                <span class="absolute -bottom-2 -right-2 bg-yellow-400 text-slate-900 font-black text-xs px-2 py-1 rounded-full border-2 border-slate-900 uppercase">
+                    AI Guide
+                </span>
+            </div>
+
+            <h2 class="font-fredoka text-2xl md:text-3xl font-bold text-white mb-2">Selamat Datang, Bio-Explorer!</h2>
+            <p class="text-slate-300 text-sm mb-6">Bantu Robot **OxyBot** menjelajahi laboratorium respirasi futuristik hingga Level 5 dan dapatkan Sertifikat Penghargaanmu!</p>
+
+            <form id="login-form" onsubmit="startGame(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">Nama Lengkap Siswa</label>
+                    <input type="text" id="input-name" required placeholder="Contoh: Andi Pratama" 
+                           class="w-full bg-slate-900/90 border-2 border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none transition font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-pink-300 uppercase tracking-wider mb-1">Kelas / Rombel</label>
+                    <input type="text" id="input-class" required placeholder="Contoh: VIII - A" 
+                           class="w-full bg-slate-900/90 border-2 border-slate-700 focus:border-pink-400 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none transition font-semibold">
+                </div>
+
+                <button type="submit" class="w-full clay-btn bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-fredoka font-bold text-lg py-4 border-b-4 border-blue-800 tracking-wide mt-4 flex items-center justify-center gap-2">
+                    <span>MULAI PETUALANGAN</span>
+                    <i class="fas fa-rocket"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- STEP 2: GAMEPLAY SCREEN -->
+        <div id="screen-game" class="hidden space-y-6">
+            
+            <!-- Dashboard Progress Bar & Level Info -->
+            <div class="clay-card p-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span id="level-badge" class="clay-badge bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-1.5 rounded-xl font-fredoka font-bold text-white text-sm">
+                        LEVEL 1
+                    </span>
+                    <h3 id="level-title" class="font-fredoka text-lg text-cyan-300 font-semibold">
+                        Jalur Udara Respirasi
+                    </h3>
+                </div>
+
+                <!-- Live Score & Timer -->
+                <div class="flex items-center gap-4 ml-auto">
+                    <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-yellow-500/30">
+                        <i class="fas fa-star text-yellow-400 text-lg animate-bounce"></i>
+                        <span class="text-xs text-slate-400 uppercase font-bold">Skor:</span>
+                        <span id="score-text" class="font-fredoka text-xl text-yellow-300 font-bold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Card Header -->
+            <div class="clay-card p-6 md:p-8 relative">
+                <!-- Level Indicator Pills -->
+                <div class="flex gap-2 mb-6">
+                    <div class="level-indicator flex-1 h-3 rounded-full bg-cyan-500 shadow-lg shadow-cyan-500/50"></div>
+                    <div class="level-indicator flex-1 h-3 rounded-full bg-slate-700"></div>
+                    <div class="level-indicator flex-1 h-3 rounded-full bg-slate-700"></div>
+                    <div class="level-indicator flex-1 h-3 rounded-full bg-slate-700"></div>
+                    <div class="level-indicator flex-1 h-3 rounded-full bg-slate-700"></div>
+                </div>
+
+                <!-- HOTS Question Context / Story -->
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <!-- Dynamic Mascot Reaction -->
+                    <div class="flex-shrink-0 mx-auto md:mx-0">
+                        <div id="mascot-box" class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-600 p-1 shadow-xl flex items-center justify-center text-4xl md:text-5xl border-2 border-white/30">
+                            🧐
+                        </div>
+                    </div>
+
+                    <!-- Question Content -->
+                    <div class="flex-grow w-full">
+                        <div class="inline-block bg-purple-900/60 text-purple-300 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider mb-2 border border-purple-500/30" id="question-type-tag">
+                            Tipe Soal HOTS
+                        </div>
+                        <h2 id="question-text" class="font-bold text-lg md:text-xl text-slate-100 leading-relaxed mb-4">
+                            Teks Pertanyaan...
+                        </h2>
+
+                        <!-- INTERACTIVE INTERFACE AREA (Dynamic Based on Level) -->
+                        <div id="interactive-area" class="mt-6">
+                            <!-- Dynamic Content Rendered via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Banner -->
+                <div id="feedback-box" class="hidden mt-6 p-4 rounded-xl border flex items-center justify-between transition-all">
+                    <div class="flex items-center gap-3">
+                        <div id="feedback-icon" class="text-2xl"></div>
+                        <div>
+                            <h4 id="feedback-title" class="font-bold font-fredoka text-base"></h4>
+                            <p id="feedback-desc" class="text-xs text-slate-200 mt-0.5"></p>
+                        </div>
+                    </div>
+                    <button id="next-btn" onclick="nextLevel()" class="clay-btn bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl text-sm font-fredoka flex items-center gap-2">
+                        <span>Lanjut</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- STEP 3: RESULT & CERTIFICATE MODAL -->
+        <div id="screen-result" class="hidden clay-card p-6 md:p-10 text-center max-w-2xl mx-auto w-full my-6">
+            <div class="text-6xl mb-4 animate-bounce">🏆</div>
+            <h2 class="font-fredoka text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 mb-2">
+                PETUALANGAN SELESAI!
+            </h2>
+            <p class="text-slate-300 text-sm mb-6">Kamu telah menyelesaikan seluruh level eksplorasi Sistem Pernapasan.</p>
+
+            <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-8">
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10">
+                    <span class="block text-xs text-slate-400 uppercase font-bold">Total Skor</span>
+                    <span id="final-score" class="font-fredoka text-3xl text-yellow-400 font-bold">0</span>
+                </div>
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/10">
+                    <span class="block text-xs text-slate-400 uppercase font-bold">Predikat</span>
+                    <span id="final-predicate" class="font-fredoka text-xl text-cyan-300 font-bold mt-1 block">Amat Baik</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="showCertificate()" class="clay-btn bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-fredoka font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2">
+                    <i class="fas fa-certificate text-yellow-300"></i>
+                    <span>LIHAT SERTIFIKAT</span>
+                </button>
+                <button onclick="restartGame()" class="clay-btn bg-slate-700 hover:bg-slate-600 text-white font-fredoka font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2">
+                    <i class="fas fa-redo"></i>
+                    <span>Main Lagi</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- CERTIFICATE MODAL VIEW -->
+    <div id="certificate-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="relative w-full max-w-3xl bg-white text-slate-900 rounded-3xl p-8 md:p-12 border-8 border-cyan-500 shadow-2xl font-jakarta">
+            
+            <!-- Close Button (Screen only) -->
+            <button onclick="closeCertificate()" class="no-print absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center font-bold">
+                ✕
+            </button>
+
+            <!-- Certificate Frame Inner -->
+            <div class="border-2 border-dashed border-cyan-600 p-6 rounded-2xl text-center relative bg-gradient-to-b from-cyan-50/50 to-white">
+                
+                <!-- Decorative Hologram Emblem -->
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-cyan-700 tracking-widest uppercase">E-Certificate Resmi RespiroQuest</span>
+                    <span class="text-2xl">🫁</span>
+                </div>
+
+                <h1 class="font-fredoka text-3xl md:text-4xl text-cyan-700 font-black tracking-wide uppercase mb-1">
+                    SERTIFIKAT PENGHARGAAN
+                </h1>
+                <p class="text-xs text-slate-500 font-semibold uppercase tracking-widest mb-6">Diberikan atas Pencapaian Eksplorasi Sains HOTS IPA Kelas 8</p>
+
+                <p class="text-slate-600 text-sm">Sertifikat ini secara sah diberikan kepada:</p>
+                <h2 id="cert-name" class="font-fredoka text-2xl md:text-3xl text-slate-900 font-bold my-2 border-b-2 border-cyan-400 inline-block px-8 pb-1">
+                    NAMA SISWA
+                </h2>
+                <p id="cert-class" class="text-sm font-semibold text-slate-600 mb-6">Kelas: VIII - A</p>
+
+                <p class="text-slate-700 text-sm max-w-lg mx-auto leading-relaxed mb-6">
+                    Telah berhasil menyelesaikan seluruh tantangan evaluasi analitis & analisis klinis mengenai <strong class="text-cyan-800">Sistem Pernapasan Manusia</strong> dengan tingkat kualifikasi:
+                </p>
+
+                <!-- Badge Predikat -->
+                <div class="inline-block bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-3 rounded-2xl font-fredoka font-bold text-xl shadow-lg mb-8" id="cert-badge">
+                    AMAT BAIK
+                </div>
+
+                <!-- Footer Signatures & Stamp -->
+                <div class="flex justify-between items-end text-left pt-6 border-t border-slate-200 text-xs">
+                    <div>
+                        <p class="text-slate-400 font-bold">TANGGAL PENYELESAIAN</p>
+                        <p id="cert-date" class="font-bold text-slate-800">24 Oktober 2026</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-1 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600 font-black text-xl border-2 border-cyan-400">
+                            VALID
+                        </div>
+                        <p class="font-bold text-slate-800">OxyBot AI Master</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print Action (Screen only) -->
+            <div class="no-print mt-6 flex justify-center gap-4">
+                <button onclick="window.print()" class="clay-btn bg-cyan-500 hover:bg-cyan-400 text-white font-bold px-6 py-3 rounded-xl font-fredoka flex items-center gap-2">
+                    <i class="fas fa-print"></i>
+                    <span>Cetak / Simpan PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME LOGIC SCRIPT -->
+    <script>
+        // Global Game State
+        let gameState = {
+            studentName: '',
+            studentClass: '',
+            currentLevel: 0,
+            score: 0,
+            soundEnabled: true,
+            answers: {}
+        };
+
+        // Sound Effects Generator using Web Audio API (No External Files Required)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                    osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.3); // A2
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.08);
+                }
+            } catch(e) { console.log('Audio error:', e); }
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (gameState.soundEnabled) {
+                icon.className = 'fas fa-volume-up';
+            } else {
+                icon.className = 'fas fa-volume-mute';
+            }
+        }
+
+        // HOTS Questions Database (5 Levels)
+        const levelsData = [
+            {
+                level: 1,
+                title: "Urutan Jalur Inspirasi Udara",
+                typeTag: "Menjodohkan / Melengkapi Jalur",
+                mascotEmoji: "🤖",
+                question: "Seorang atlet sedang melakukan latihan pernapasan mendalam. Susun kembali urutan organ pernapasan yang dilalui molekul oksigen dari udara luar hingga sampai ke pembuluh darah!",
+                type: "matching",
+                // Correct sequence order
+                items: [
+                    { id: '1', name: 'Rongga Hidung (Penyaringan & Penyesuaian Suhu)' },
+                    { id: '2', name: 'Faring & Laring (Pangkal Tenggorokan)' },
+                    { id: '3', name: 'Trakea (Cincin Tulang Rawan)' },
+                    { id: '4', name: 'Bronkus & Bronkiolus (Percabangan)' },
+                    { id: '5', name: 'Alveolus (Pertukaran Gas Diffusi)' }
+                ]
+            },
+            {
+                level: 2,
+                title: "Analisis Mekanisme Pernapasan Dada vs Perut",
+                typeTag: "Pilihan Ganda HOTS (Analisis Kasus)",
+                mascotEmoji: "🔬",
+                question: "Saat bernyanyi dengan nada tinggi dan panjang, seorang penyanyi menggunakan pernapasan perut. Manakah penjelasan mekanisme otot yang paling TEPAT saat fase INSPIRASI pernapasan perut terjadi?",
+                type: "mcq",
+                options: [
+                    {
+                        text: "Otot diafragma berkontraksi (mendatar), volume rongga dada membesar, tekanan udara dada mengecil, udara masuk.",
+                        correct: true,
+                        explanation: "Tepat sekali! Kontraksi diafragma menyebabkan posisinya mendatar sehingga rongga dada membesar dan tekanan udara di dalam paru-paru menjadi lebih rendah dari udara luar."
+                    },
+                    {
+                        text: "Otot antar tulang rusuk mengendur, tulang rusuk turun, tekanan udara dalam dada membesar, udara terdorong masuk.",
+                        correct: false,
+                        explanation: "Kurang tepat. Jika otot mengendur dan tulang rusuk turun, ini merupakan mekanisme Ekspirasi (menghembuskan napas)."
+                    },
+                    {
+                        text: "Otot diafragma relaksasi (melengkung ke atas), volume rongga dada mengecil, udara tersedot masuk.",
+                        correct: false,
+                        explanation: "Salah. Relaksasi diafragma membuat volume dada mengecil, yang menyebabkan udara keluar (ekspirasi)."
+                    },
+                    {
+                        text: "Otot perut berkontraksi menekan diafragma ke atas, membuat udara luar terhisap secara spontan.",
+                        correct: false,
+                        explanation: "Salah. Menekan diafragma ke atas menaikkan tekanan udara di dada sehingga udara justru terdorong keluar."
+                    }
+                ]
+            },
+            {
+                level: 3,
+                title: "Pertukaran Gas pada Alveolus",
+                typeTag: "Pilihan Majemuk (Centang Semua yang Benar)",
+                mascotEmoji: "🧪",
+                question: "Alveolus memiliki struktur khusus yang sangat efisien untuk pertukaran oksigen dan karbon dioksida. Pilihlah DUA atau LEBIH ciri adaptasi struktur alveolus beserta alasannya yang BENAR!",
+                type: "multi_select",
+                options: [
+                    {
+                        id: "opt1",
+                        text: "Dinding alveolus sangat tipis (setebal satu lapis sel) memudahkan proses difusi gas secara cepat.",
+                        correct: true
+                    },
+                    {
+                        id: "opt2",
+                        text: "Dikelilingi oleh jaring pembuluh kapiler darah yang padat untuk mengangkut oksigen.",
+                        correct: true
+                    },
+                    {
+                        id: "opt3",
+                        text: "Permukaan dalam alveolus selalu dalam kondisi lembab agar gas dapat terlarut sebelum berdifusi.",
+                        correct: true
+                    },
+                    {
+                        id: "opt4",
+                        text: "Memiliki otot polos yang tebal untuk memompa oksigen langsung ke dalam pembuluh arteri utama.",
+                        correct: false
+                    }
+                ]
+            },
+            {
+                level: 4,
+                title: "Mitos vs Fakta Gangguan Pernapasan",
+                typeTag: "Pertanyaan Benar / Salah Interaktif",
+                mascotEmoji: "🩺",
+                question: "Anomali Pernapasan: 'Seseorang yang merokok pasif (menghirup asap rokok orang lain) memiliki risiko kerusakan dinding alveolus (Emfisema) yang tidak kalah berbahaya dibanding perokok aktif.'",
+                type: "true_false",
+                correctAnswer: true,
+                explanation: "BENAR! Asap rokok sampingan (sidestream smoke) mengandung zat iritan dan radikal bebas tinggi yang dapat merusak zat elastin pada dinding alveolus, menyebabkan emfisema baik pada perokok aktif maupun pasif."
+            },
+            {
+                level: 5,
+                title: "Simulasi Evaluasi Klinik & Bahaya Polusi",
+                typeTag: "Studi Kasus Evaluatif HOTS",
+                mascotEmoji: "👨‍⚕️",
+                question: "Seorang warga yang tinggal di daerah industri berdebu mengalami gejala batuk kronis, sesak napas, dan daya tahan tubuh menurun. Hasil pemeriksaan kapasitas vital paru-parunya berada di bawah normal. Tindakan evaluatif & preventif manakah yang paling efektif secara biologis untuk memulihkan fungsi sistem pernapasannya?",
+                type: "mcq",
+                options: [
+                    {
+                        text: "Menggunakan masker respirator standar HEPA saat beraktivitas outdoor dan melakukan terapi inhalasi pelarut mukus untuk memperbaiki elastisitas alveolus.",
+                        correct: true,
+                        explanation: "Sangat Tepat! Masker HEPA menyaring partikel micro (PM2.5) dan terapi spesifik membantu memulihkan fungsi kerja silia serta kantung alveolus."
+                    },
+                    {
+                        text: "Cukup meminum air hangat yang banyak tanpa perlu memakai masker karena debu akan terlarut secara alami di tenggorokan.",
+                        correct: false,
+                        explanation: "Kurang tepat. Air hangat tidak dapat menjangkau atau membersihkan debu mikroskopis yang sudah masuk ke alveolus."
+                    },
+                    {
+                        text: "Melakukan olahraga maraton berat setiap hari di luar rumah untuk memaksa paru-paru membesar.",
+                        correct: false,
+                        explanation: "Salah. Berolahraga berat di area berpolusi tinggi justru memperbanyak racun partikulat yang masuk ke dalam alveolus."
+                    }
+                ]
+            }
+        ];
+
+        // Start Game Handler
+        function startGame(e) {
+            e.preventDefault();
+            playSound('click');
+
+            const name = document.getElementById('input-name').value.trim();
+            const cls = document.getElementById('input-class').value.trim();
+
+            if (!name || !cls) return;
+
+            gameState.studentName = name;
+            gameState.studentClass = cls;
+            gameState.currentLevel = 0;
+            gameState.score = 0;
+
+            document.getElementById('display-student-name').innerText = name;
+            document.getElementById('display-student-class').innerText = "Kelas: " + cls;
+            document.getElementById('student-badge').classList.remove('hidden');
+
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            renderLevel();
+        }
+
+        // Render Current Level Dynamic Interface
+        function renderLevel() {
+            const levelData = levelsData[gameState.currentLevel];
+
+            // Reset UI States
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('score-text').innerText = gameState.score;
+            document.getElementById('level-badge').innerText = `LEVEL ${levelData.level}`;
+            document.getElementById('level-title').innerText = levelData.title;
+            document.getElementById('question-type-tag').innerText = levelData.typeTag;
+            document.getElementById('question-text').innerText = levelData.question;
+            document.getElementById('mascot-box').innerText = levelData.mascotEmoji;
+
+            // Update Progress Pills
+            const pills = document.querySelectorAll('.level-indicator');
+            pills.forEach((pill, idx) => {
+                if (idx <= gameState.currentLevel) {
+                    pill.className = "level-indicator flex-1 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 transition-all duration-300";
+                } else {
+                    pill.className = "level-indicator flex-1 h-3 rounded-full bg-slate-700";
+                }
+            });
+
+            const interactiveArea = document.getElementById('interactive-area');
+            interactiveArea.innerHTML = '';
+
+            // LEVEL TYPE 1: MATCHING / REORDERING
+            if (levelData.type === 'matching') {
+                // Shuffle items for challenge
+                let shuffled = [...levelData.items].sort(() => Math.random() - 0.5);
+                
+                let html = `<p class="text-xs text-cyan-300 font-bold mb-3"><i class="fas fa-info-circle mr-1"></i> Klik pilihan di bawah secara berurutan dari urutan KE-1 hingga KE-5:</p>`;
+                html += `<div id="matching-container" class="space-y-2">`;
+                shuffled.forEach((item) => {
+                    html += `
+                        <button onclick="handleMatchingSelect('${item.id}', this)" class="matching-btn w-full bg-slate-800/90 hover:bg-slate-700 border-2 border-slate-600/80 p-3.5 rounded-xl text-left text-sm font-semibold flex items-center justify-between transition">
+                            <span class="item-text">${item.name}</span>
+                            <span class="badge-step text-xs bg-slate-700 px-2.5 py-1 rounded-lg text-slate-400">Pilih</span>
+                        </button>
+                    `;
+                });
+                html += `</div>`;
+                html += `<button onclick="checkMatchingAnswer()" class="clay-btn bg-cyan-500 hover:bg-cyan-400 text-white font-fredoka font-bold py-3 px-6 rounded-xl mt-4 text-sm">PERIKSA URUTAN</button>`;
+                interactiveArea.innerHTML = html;
+                gameState.selectedOrder = [];
+            } 
+            // LEVEL TYPE 2 & 5: MCQ
+            else if (levelData.type === 'mcq') {
+                let html = `<div class="space-y-3">`;
+                levelData.options.forEach((opt, idx) => {
+                    html += `
+                        <button onclick="handleMCQSelect(${idx})" class="w-full bg-slate-800/80 hover:bg-slate-700/90 border-2 border-slate-700 hover:border-cyan-400 p-4 rounded-2xl text-left text-sm font-medium transition flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-slate-700 text-cyan-300 font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">${String.fromCharCode(65 + idx)}</span>
+                            <span class="text-slate-200">${opt.text}</span>
+                        </button>
+                    `;
+                });
+                html += `</div>`;
+                interactiveArea.innerHTML = html;
+            }
+            // LEVEL TYPE 3: MULTI SELECT
+            else if (levelData.type === 'multi_select') {
+                let html = `<div class="space-y-3 mb-4">`;
+                levelData.options.forEach((opt) => {
+                    html += `
+                        <label class="flex items-start gap-3 bg-slate-800/80 p-4 rounded-2xl border-2 border-slate-700 hover:border-purple-400 cursor-pointer transition">
+                            <input type="checkbox" value="${opt.id}" class="multi-check w-5 h-5 mt-0.5 rounded accent-pink-500">
+                            <span class="text-sm font-medium text-slate-200">${opt.text}</span>
+                        </label>
+                    `;
+                });
+                html += `</div>`;
+                html += `<button onclick="checkMultiSelectAnswer()" class="clay-btn bg-purple-600 hover:bg-purple-500 text-white font-fredoka font-bold py-3 px-6 rounded-xl text-sm">KIRIM JAWABAN</button>`;
+                interactiveArea.innerHTML = html;
+            }
+            // LEVEL TYPE 4: TRUE / FALSE
+            else if (levelData.type === 'true_false') {
+                let html = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="handleTrueFalse(true)" class="clay-btn bg-emerald-600 hover:bg-emerald-500 text-white font-fredoka font-bold py-6 rounded-2xl text-lg flex flex-col items-center justify-center gap-2">
+                            <i class="fas fa-check-circle text-3xl"></i>
+                            <span>BENAR</span>
+                        </button>
+                        <button onclick="handleTrueFalse(false)" class="clay-btn bg-rose-600 hover:bg-rose-500 text-white font-fredoka font-bold py-6 rounded-2xl text-lg flex flex-col items-center justify-center gap-2">
+                            <i class="fas fa-times-circle text-3xl"></i>
+                            <span>SALAH</span>
+                        </button>
+                    </div>
+                `;
+                interactiveArea.innerHTML = html;
+            }
+        }
+
+        // Matching Logic Handler
+        function handleMatchingSelect(id, btnElem) {
+            playSound('click');
+            if (!gameState.selectedOrder) gameState.selectedOrder = [];
+
+            const index = gameState.selectedOrder.indexOf(id);
+            if (index > -1) {
+                // Unselect
+                gameState.selectedOrder.splice(index, 1);
+                btnElem.classList.remove('border-cyan-400', 'bg-cyan-900/40');
+                btnElem.querySelector('.badge-step').innerText = 'Pilih';
+                btnElem.querySelector('.badge-step').className = 'badge-step text-xs bg-slate-700 px-2.5 py-1 rounded-lg text-slate-400';
+            } else {
+                // Select
+                if (gameState.selectedOrder.length >= 5) return;
+                gameState.selectedOrder.push(id);
+                btnElem.classList.add('border-cyan-400', 'bg-cyan-900/40');
+                const stepNum = gameState.selectedOrder.length;
+                btnElem.querySelector('.badge-step').innerText = `Langkah ${stepNum}`;
+                btnElem.querySelector('.badge-step').className = 'badge-step text-xs bg-cyan-500 text-slate-900 font-bold px-2.5 py-1 rounded-lg';
+            }
+        }
+
+        function checkMatchingAnswer() {
+            if (!gameState.selectedOrder || gameState.selectedOrder.length < 5) {
+                alert("Harap pilih urutan lengkap untuk 5 organ terlebih dahulu!");
+                return;
+            }
+
+            const correctSequence = ['1', '2', '3', '4', '5'];
+            const isCorrect = JSON.stringify(gameState.selectedOrder) === JSON.stringify(correctSequence);
+
+            if (isCorrect) {
+                showFeedback(true, "Urutan Tepat Sempurna!", "Luar biasa! Jalur respirasi manusia dimulai dari Hidung → Faring/Laring → Trakea → Bronkus → Alveolus.");
+                gameState.score += 20;
+            } else {
+                showFeedback(false, "Urutan Belum Tepat", "Ingat jalur inspirasi: Udara masuk dari Hidung, melewati Pangkal Tenggorokan (Laring), Trakea, Bronkus, dan berakhir di Alveolus.");
+            }
+        }
+
+        // MCQ Handler
+        function handleMCQSelect(optIndex) {
+            playSound('click');
+            const levelData = levelsData[gameState.currentLevel];
+            const selectedOpt = levelData.options[optIndex];
+
+            if (selectedOpt.correct) {
+                showFeedback(true, "Jawaban Analitis Tepat!", selectedOpt.explanation);
+                gameState.score += 20;
+            } else {
+                showFeedback(false, "Kurang Tepat", selectedOpt.explanation);
+            }
+        }
+
+        // Multi Select Handler
+        function checkMultiSelectAnswer() {
+            playSound('click');
+            const checkboxes = document.querySelectorAll('.multi-check:checked');
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selectedIds.length === 0) {
+                alert("Pilihlah setidaknya satu opsi jawaban!");
+                return;
+            }
+
+            // Correct options are opt1, opt2, opt3
+            const correctSet = ['opt1', 'opt2', 'opt3'];
+            const isCorrect = selectedIds.length === correctSet.length && selectedIds.every(id => correctSet.includes(id));
+
+            if (isCorrect) {
+                showFeedback(true, "Analisis Struktur Sempurna!", "Tepat sekali! Dinding alveolus tipis, kaya pembuluh darah kapiler, dan permukaannya lembab adalah kombinasi utama efisiensi difusi gas.");
+                gameState.score += 20;
+            } else {
+                showFeedback(false, "Analisis Belum Lengkap", "Perhatikan: Alveolus tidak memiliki otot polos tebal. Efisiensi difusi didukung oleh dinding selapis yang tipis, kelembaban, serta jaringan kapiler darah.");
+            }
+        }
+
+        // True / False Handler
+        function handleTrueFalse(userChoice) {
+            playSound('click');
+            const levelData = levelsData[gameState.currentLevel];
+
+            if (userChoice === levelData.correctAnswer) {
+                showFeedback(true, "Jawaban Tepat!", levelData.explanation);
+                gameState.score += 20;
+            } else {
+                showFeedback(false, "Miskonsepsi Teori!", levelData.explanation);
+            }
+        }
+
+        // Feedback Banner Display
+        function showFeedback(isSuccess, title, desc) {
+            playSound(isSuccess ? 'correct' : 'wrong');
+
+            // Disable buttons in interactive area to prevent double click
+            const interactiveArea = document.getElementById('interactive-area');
+            const buttons = interactiveArea.querySelectorAll('button, input');
+            buttons.forEach(b => b.disabled = true);
+
+            const fbBox = document.getElementById('feedback-box');
+            const fbIcon = document.getElementById('feedback-icon');
+            const fbTitle = document.getElementById('feedback-title');
+            const fbDesc = document.getElementById('feedback-desc');
+
+            fbBox.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-500', 'bg-rose-950/80', 'border-rose-500');
+
+            if (isSuccess) {
+                fbBox.classList.add('bg-emerald-950/80', 'border-emerald-500');
+                fbIcon.innerText = '🎉';
+                fbTitle.className = "font-bold font-fredoka text-base text-emerald-300";
+                fbTitle.innerText = title;
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+            } else {
+                fbBox.classList.add('bg-rose-950/80', 'border-rose-500');
+                fbIcon.innerText = '💡';
+                fbTitle.className = "font-bold font-fredoka text-base text-rose-300";
+                fbTitle.innerText = title;
+            }
+
+            fbDesc.innerText = desc;
+            document.getElementById('score-text').innerText = gameState.score;
+        }
+
+        // Next Level Navigation
+        function nextLevel() {
+            playSound('click');
+            gameState.currentLevel++;
+
+            if (gameState.currentLevel < levelsData.length) {
+                renderLevel();
+            } else {
+                finishGame();
+            }
+        }
+
+        // Finish Game & Calculate Predicate
+        function finishGame() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            document.getElementById('final-score').innerText = gameState.score;
+
+            let predicate = "";
+            let badgeClass = "";
+
+            if (gameState.score >= 80) {
+                predicate = "AMAT BAIK";
+                badgeClass = "bg-gradient-to-r from-emerald-500 to-green-600";
+            } else if (gameState.score >= 60) {
+                predicate = "BAIK";
+                badgeClass = "bg-gradient-to-r from-cyan-500 to-blue-600";
+            } else {
+                predicate = "CUKUP";
+                badgeClass = "bg-gradient-to-r from-amber-500 to-yellow-600";
+            }
+
+            document.getElementById('final-predicate').innerText = predicate;
+            
+            // Populate Certificate
+            document.getElementById('cert-name').innerText = gameState.studentName.toUpperCase();
+            document.getElementById('cert-class').innerText = "Kelas: " + gameState.studentClass;
+            
+            const badgeElem = document.getElementById('cert-badge');
+            badgeElem.innerText = predicate;
+            badgeElem.className = `inline-block ${badgeClass} text-white px-8 py-3 rounded-2xl font-fredoka font-bold text-xl shadow-lg mb-8`;
+
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('cert-date').innerText = today.toLocaleDateString('id-ID', options);
+
+            // Celebration Confetti
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        }
+
+        // Modal Certificate Controls
+        function showCertificate() {
+            playSound('click');
+            document.getElementById('certificate-modal').classList.remove('hidden');
+        }
+
+        function closeCertificate() {
+            playSound('click');
+            document.getElementById('certificate-modal').classList.add('hidden');
+        }
+
+        function restartGame() {
+            playSound('click');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-login').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
