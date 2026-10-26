@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioVerse 8: Petualangan IPA Interaktif</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Fredoka & Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 50%, #022c22 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+
+        .font-game {
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* Futuristic Claymorphism Styling Effects */
+        .clay-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                inset 0 4px 6px rgba(255, 255, 255, 0.3),
+                inset 0 -6px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .clay-btn {
+            border-radius: 20px;
+            font-family: 'Fredoka', cursive;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 
+                0 8px 0 rgba(0, 0, 0, 0.3),
+                inset 0 3px 4px rgba(255, 255, 255, 0.4),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            top: 0;
+        }
+
+        .clay-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 10px 0 rgba(0, 0, 0, 0.3),
+                inset 0 3px 4px rgba(255, 255, 255, 0.5),
+                inset 0 -4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .clay-btn:active {
+            transform: translateY(6px);
+            box-shadow: 
+                0 2px 0 rgba(0, 0, 0, 0.3),
+                inset 0 2px 2px rgba(255, 255, 255, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .clay-btn-emerald { background: linear-gradient(180deg, #10b981 0%, #047857 100%); color: white; }
+        .clay-btn-cyan { background: linear-gradient(180deg, #06b6d4 0%, #0891b2 100%); color: white; }
+        .clay-btn-purple { background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%); color: white; }
+        .clay-btn-amber { background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); color: white; }
+        .clay-btn-rose { background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%); color: white; }
+
+        /* Floating Animation for 3D Clay Avatar */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Certificate Print CSS */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate {
+                position: absolute;
+                left: 0; top: 0; width: 100%; height: 100%;
+                background: white !important; color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
+
+    <!-- Header Navigation -->
+    <header class="w-full max-w-4xl flex justify-between items-center mb-4 clay-card p-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/30 border-2 border-emerald-400 flex items-center justify-center text-emerald-300 text-2xl font-bold font-game">
+                <i class="fa-solid fa-dna"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold font-game text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+                    BioVerse 8
+                </h1>
+                <p class="text-xs text-emerald-200">Petualangan Sistem Tubuh & Organ HOTS</p>
+            </div>
+        </div>
+        
+        <!-- Score & Level Badge -->
+        <div id="game-stats" class="hidden flex items-center gap-4">
+            <div class="text-right">
+                <div class="text-xs text-emerald-300 uppercase font-semibold">Skor Kamu</div>
+                <div id="display-score" class="text-xl md:text-2xl font-game text-amber-400">0</div>
+            </div>
+            <div class="text-right border-l border-white/20 pl-4">
+                <div class="text-xs text-teal-300 uppercase font-semibold">Level</div>
+                <div id="display-level" class="text-xl md:text-2xl font-game text-emerald-400">1/5</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="w-full max-w-4xl my-auto">
+        
+        <!-- ================= 1. REGISTRATION / IDENTITY SCREEN ================= -->
+        <section id="screen-register" class="clay-card p-6 md:p-10 text-center max-w-xl mx-auto">
+            <!-- 3D Clay Character Graphic (SVG) -->
+            <div class="w-32 h-32 mx-auto mb-4 animate-float">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full filter drop-shadow-xl">
+                    <circle cx="100" cy="100" r="80" fill="url(#bioClayGrad)" />
+                    <circle cx="70" cy="80" r="12" fill="#022c22" />
+                    <circle cx="130" cy="80" r="12" fill="#022c22" />
+                    <circle cx="74" cy="76" r="4" fill="#ffffff" />
+                    <circle cx="134" cy="76" r="4" fill="#ffffff" />
+                    <!-- Bio Visor Glasses -->
+                    <rect x="50" y="68" width="100" height="24" rx="12" fill="none" stroke="#10b981" stroke-width="6" opacity="0.9"/>
+                    <path d="M 70 120 Q 100 150 130 120" stroke="#022c22" stroke-width="8" stroke-linecap="round" fill="none"/>
+                    <defs>
+                        <radialGradient id="bioClayGrad" cx="30%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#34d399"/>
+                            <stop offset="60%" stop-color="#059669"/>
+                            <stop offset="100%" stop-color="#022c22"/>
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <h2 class="text-2xl md:text-3xl font-game text-white mb-2">Selamat Datang Penjelajah Bio!</h2>
+            <p class="text-emerald-200 text-sm mb-6">Jelajahi dan atasi tantangan HOTS seputar Organ & Sistem Tubuh Manusia!</p>
+
+            <form id="form-identity" onsubmit="startGame(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-300 uppercase mb-1">Nama Lengkap Siswa</label>
+                    <input type="text" id="input-nama" required placeholder="Masukkan nama kamu..." 
+                        class="w-full px-4 py-3 rounded-xl bg-slate-900/60 border border-emerald-500/40 text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-300 uppercase mb-1">Kelas (SMP Kelas 8)</label>
+                    <input type="text" id="input-kelas" required placeholder="Contoh: VIII A / VIII-1" 
+                        class="w-full px-4 py-3 rounded-xl bg-slate-900/60 border border-emerald-500/40 text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50">
+                </div>
+                <button type="submit" class="w-full clay-btn clay-btn-emerald py-4 text-lg font-bold mt-4 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-microscope"></i> Mulai Misi BioVerse
+                </button>
+            </form>
+        </section>
+
+        <!-- ================= 2. LEVEL MAP / DASHBOARD ================= -->
+        <section id="screen-level-map" class="hidden clay-card p-6 md:p-8 text-center">
+            <h2 class="text-2xl md:text-3xl font-game text-emerald-300 mb-2">Pilih Level Misi</h2>
+            <p class="text-emerald-200 text-sm mb-8">Selesaikan misi secara berurutan untuk membuka pengetahuan biologi tingkat tinggi!</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <!-- Level Cards dynamically updated -->
+                <div id="btn-lvl-1" onclick="selectLevel(1)" class="clay-card p-5 cursor-pointer hover:border-emerald-400 transition">
+                    <div class="text-3xl text-emerald-400 font-game mb-1">L-1</div>
+                    <div class="text-xs font-semibold text-slate-300">Organ & Fungsi Nutrisi</div>
+                    <div class="mt-3 text-amber-400 text-sm" id="star-lvl-1"><i class="fa-regular fa-star"></i></div>
+                </div>
+                <div id="btn-lvl-2" onclick="selectLevel(2)" class="clay-card p-5 cursor-not-allowed opacity-50">
+                    <div class="text-3xl text-cyan-400 font-game mb-1"><i class="fa-solid fa-lock text-xl"></i> L-2</div>
+                    <div class="text-xs font-semibold text-slate-300">Enzim & Pencernaan</div>
+                    <div class="mt-3 text-amber-400 text-sm" id="star-lvl-2"><i class="fa-regular fa-star"></i></div>
+                </div>
+                <div id="btn-lvl-3" onclick="selectLevel(3)" class="clay-card p-5 cursor-not-allowed opacity-50">
+                    <div class="text-3xl text-purple-400 font-game mb-1"><i class="fa-solid fa-lock text-xl"></i> L-3</div>
+                    <div class="text-xs font-semibold text-slate-300">Uji Makanan & Organ</div>
+                    <div class="mt-3 text-amber-400 text-sm" id="star-lvl-3"><i class="fa-regular fa-star"></i></div>
+                </div>
+                <div id="btn-lvl-4" onclick="selectLevel(4)" class="clay-card p-5 cursor-not-allowed opacity-50">
+                    <div class="text-3xl text-amber-400 font-game mb-1"><i class="fa-solid fa-lock text-xl"></i> L-4</div>
+                    <div class="text-xs font-semibold text-slate-300">Relasi Organ & Pasangan</div>
+                    <div class="mt-3 text-amber-400 text-sm" id="star-lvl-4"><i class="fa-regular fa-star"></i></div>
+                </div>
+                <div id="btn-lvl-5" onclick="selectLevel(5)" class="clay-card p-5 cursor-not-allowed opacity-50">
+                    <div class="text-3xl text-rose-400 font-game mb-1"><i class="fa-solid fa-lock text-xl"></i> L-5</div>
+                    <div class="text-xs font-semibold text-slate-300">Gangguan & Kesehatan Organ</div>
+                    <div class="mt-3 text-amber-400 text-sm" id="star-lvl-5"><i class="fa-regular fa-star"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. GAMEPLAY SCREEN (QUIZ AREA) ================= -->
+        <section id="screen-quiz" class="hidden clay-card p-6 md:p-8">
+            <!-- Quiz Top Header -->
+            <div class="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
+                <div>
+                    <span id="quiz-type-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-400/40">
+                        Pilihan Ganda
+                    </span>
+                    <h3 id="quiz-level-title" class="text-lg font-bold text-emerald-300 mt-1">Level 1: Organ & Fungsi Nutrisi</h3>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400">Pertanyaan</span>
+                    <div id="quiz-progress" class="font-game text-xl text-amber-400">1/5</div>
+                </div>
+            </div>
+
+            <!-- Question Area -->
+            <div class="mb-6">
+                <div id="question-text" class="text-base md:text-lg text-white font-medium mb-4 leading-relaxed">
+                    <!-- Text Soal HOTS IPA -->
+                </div>
+            </div>
+
+            <!-- Answer Interactive Container (Dynamic) -->
+            <div id="answer-container" class="space-y-3 mb-6">
+                <!-- Pilihan Jawaban disuntikkan secara dinamis -->
+            </div>
+
+            <!-- Feedback Message -->
+            <div id="feedback-box" class="hidden p-4 rounded-xl mb-4 text-center font-semibold text-sm"></div>
+
+            <!-- Action Controls -->
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="backToMap()" class="clay-btn clay-btn-rose px-5 py-2.5 text-sm">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Peta Misi
+                </button>
+                <button id="btn-submit-answer" onclick="checkAnswer()" class="clay-btn clay-btn-emerald px-8 py-3 text-base">
+                    Kirim Jawaban <i class="fa-solid fa-paper-plane ml-1"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= 4. CERTIFICATE / RESULTS SCREEN ================= -->
+        <section id="screen-certificate" class="hidden">
+            <!-- Action Bar Above Certificate -->
+            <div class="flex justify-center gap-4 mb-6 no-print">
+                <button onclick="window.print()" class="clay-btn clay-btn-cyan px-6 py-3 font-bold text-sm">
+                    <i class="fa-solid fa-print mr-2"></i> Cetak / Simpan PDF
+                </button>
+                <button onclick="restartGame()" class="clay-btn clay-btn-purple px-6 py-3 font-bold text-sm">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Main Lagi
+                </button>
+            </div>
+
+            <!-- Certificate Visual Container -->
+            <div id="printable-certificate" class="clay-card p-8 md:p-12 text-center text-slate-800 bg-white relative overflow-hidden rounded-3xl border-8 border-amber-400 shadow-2xl">
+                <div class="absolute inset-2 border-2 border-dashed border-emerald-300 rounded-2xl pointer-events-none"></div>
+
+                <div class="flex justify-center items-center gap-3 mb-4">
+                    <i class="fa-solid fa-award text-5xl text-amber-500"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-game uppercase tracking-wider text-emerald-950 mb-1">
+                    Sertifikat Penghargaan
+                </h2>
+                <p class="text-xs uppercase tracking-widest text-emerald-600 font-semibold mb-6">
+                    BioVerse 8: Sistem Organ IPA SMP Class 8 Mastery
+                </p>
+
+                <p class="text-sm text-slate-600 mb-2">Sertifikat ini secara resmi diberikan kepada:</p>
+                <h3 id="cert-name" class="text-2xl md:text-3xl font-bold font-game text-emerald-900 underline decoration-amber-400 decoration-4 mb-1">
+                    [Nama Siswa]
+                </h3>
+                <p id="cert-class" class="text-sm font-semibold text-slate-600 mb-6">Kelas: [Kelas]</p>
+
+                <p class="text-sm text-slate-700 max-w-xl mx-auto mb-6 leading-relaxed">
+                    Telah berhasil menyelesaikan seluruh 5 Misi Tantangan Berbasis <b>HOTS (Higher Order Thinking Skills)</b> pada mata pelajaran Ilmu Pengetahuan Alam (IPA) Kelas 8 dengan kriteria:
+                </p>
+
+                <!-- Final Predicate & Score Box -->
+                <div class="inline-block bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-6 mb-6 shadow-inner">
+                    <div class="text-xs uppercase text-slate-500 font-bold mb-1">Total Skor Akhir</div>
+                    <div id="cert-score" class="text-4xl font-game text-emerald-600 mb-2">100 / 100</div>
+                    <div class="text-xs uppercase text-slate-500 font-bold mb-1">Kategori Predikat</div>
+                    <div id="cert-predicate" class="text-2xl font-game text-amber-600">AMAT BAIK</div>
+                </div>
+
+                <!-- Footer Signatures -->
+                <div class="flex justify-between items-end mt-8 pt-6 border-t border-slate-200 text-xs text-slate-500">
+                    <div class="text-left">
+                        <p class="font-bold text-slate-700">BioVerse Science Lab</p>
+                        <p>Evaluasi Sains Interaktif</p>
+                    </div>
+                    <div class="text-right">
+                        <p id="cert-date">Tanggal: --/--/----</p>
+                        <p class="italic">Verifikasi Digital Otomatis</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center text-xs text-emerald-300/60 mt-6 no-print">
+        © BioVerse Interactive Game • Edukasi IPA SMP Kelas 8
+    </footer>
+
+    <!-- Game Logic JavaScript -->
+    <script>
+        let studentData = { nama: '', kelas: '' };
+        let currentLevel = 1;
+        let unlockedLevel = 1;
+        let scores = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        let userSelections = {};
+
+        // HOTS IPA Questions Data
+        const levelQuestions = {
+            1: {
+                type: 'single', // Pilihan Ganda
+                title: 'Level 1: Organ Pencernaan & Nutrisi',
+                badge: 'Pilihan Ganda',
+                question: 'Seorang siswa mengonsumsi sarapan berupa roti tawar bermentega dan telur rebus. Di dalam saluran pencernaan, organ manakah yang pertama kali melakukan pencernaan kimiawi terhadap komponen karbohidrat dari roti tawar tersebut?',
+                options: [
+                    'Lambung, dengan bantuan asam klorida (HCl)',
+                    'Mulut, dengan bantuan enzim ptialin (amilase)',
+                    'Usus halus, dengan bantuan enzim lipase',
+                    'Kerongkongan, dengan gerakan peristaltik'
+                ],
+                correct: 1,
+                explanation: 'Pencernaan kimiawi karbohidrat dimulai di mulut oleh enzim ptialin (amilase saliva) yang memecah amilum menjadi maltosa.'
+            },
+            2: {
+                type: 'multiple', // Pilihan Majemuk
+                title: 'Level 2: Enzim & Proses Organ Pencernaan',
+                badge: 'Pilihan Majemuk (Pilih Semua yang Benar)',
+                question: 'Manakah dari pernyataan berikut yang MERUPAKAN fungsi utama dari lambung dalam sistem pencernaan manusia? (Pilih 2 jawaban yang benar)',
+                options: [
+                    'Membunuh kuman penyakit pada makanan menggunakan asam klorida (HCl)',
+                    'Menyerap air dan membusukkan sisa makanan dengan bantuan bakteri E. coli',
+                    'Cerna protein secara kimiawi menggunakan enzim pepsin',
+                    'Menyerap sari-sari makanan ke dalam pembuluh darah'
+                ],
+                correct: [0, 2],
+                explanation: 'Lambung berfungsi menghasilkan HCl untuk membunuh kuman/mengasamkan makanan serta menghasilkan pepsin untuk memecah protein menjadi pepton.'
+            },
+            3: {
+                type: 'boolean', // Benar / Salah
+                title: 'Level 3: Uji Makanan & Fungsi Organ',
+                badge: 'Benar / Salah',
+                question: '<b>Skenario:</b> Sampel ekstrak makanan ditetesi larutan Biuret dan warnanya berubah menjadi ungu.<br><br><b>Pernyataan:</b> "Hasil ini menunjukkan bahwa makanan tersebut mengandung glukosa tinggi yang nantinya diserap utama oleh lambung."',
+                options: ['BENAR', 'SALAH'],
+                correct: 1, // SALAH
+                explanation: 'Pernyataan SALAH. Reagen Biuret yang berubah warna menjadi ungu menunjukkan kandungan PROTEIN, bukan glukosa. Penyerapan nutrisi utama juga terjadi di usus halus, bukan lambung.'
+            },
+            4: {
+                type: 'matching', // Menjodohkan
+                title: 'Level 4: Pasangan Organ & Fungsinya',
+                badge: 'Menjodohkan Pasangan',
+                question: 'Jodohkanlah organ pencernaan berikut dengan peran/proses utama yang terjadi di dalamnya secara tepat!',
+                pairs: [
+                    { label: 'Usus Halus (Intestinum)', options: ['Penyerapan sari makanan', 'Pembusukan sisa makanan', 'Gerak peristaltik saja'], correct: 'Penyerapan sari makanan' },
+                    { label: 'Usus Besar (Colon)', options: ['Penyerapan air & pembusukan', 'Pencernaan karbohidrat', 'Penyimpanan empedu'], correct: 'Penyerapan air & pembusukan' },
+                    { label: 'Hati (Hepar)', options: ['Menghasilkan cairan empedu', 'Menghasilkan asam klorida', 'Menyerap protein'], correct: 'Menghasilkan cairan empedu' }
+                ],
+                explanation: 'Usus halus menyerap sari makanan; usus besar mengatur kadar air & pembusukan sisa; hati menghasilkan empedu untuk mengemulsi lemak.'
+            },
+            5: {
+                type: 'single', // HOTS Analisis Kasus
+                title: 'Level 5: Gangguan & Kesehatan Organ',
+                badge: 'Pilihan Ganda HOTS',
+                question: 'Seorang pasien mengeluhkan rasa perih di lambung dan feses yang sangat encer akibat terinfeksi bakteri. Dokter menyimpulkan pasien mengalami gangguan penceran. Kombinasi penyakit dan upaya pencegahan yang paling tepat adalah...',
+                options: [
+                    'Sembelit; disembuhkan dengan mengurangi konsumsi serat',
+                    'Maag dan Diare; dicegah dengan pola makan teratur dan menjaga kebersihan makanan',
+                    'Apendisitis; dicegah dengan menghindari makanan berlemak',
+                    'Cariologi; dicegah dengan rajin mengunyah makanan keras'
+                ],
+                correct: 1,
+                explanation: 'Rasa perih lambung mengindikasikan maag (gastritis), sedangkan feses encer akibat infeksi mengindikasikan diare. Keduanya dapat dicegah dengan pola makan teratur dan kebersihan makanan.'
+            }
+        };
+
+        function startGame(e) {
+            e.preventDefault();
+            studentData.nama = document.getElementById('input-nama').value.trim();
+            studentData.kelas = document.getElementById('input-kelas').value.trim();
+
+            if (studentData.nama && studentData.kelas) {
+                document.getElementById('screen-register').classList.add('hidden');
+                document.getElementById('screen-level-map').classList.remove('hidden');
+                document.getElementById('game-stats').classList.remove('hidden');
+                updateLevelMap();
+            }
+        }
+
+        function updateLevelMap() {
+            let totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+            document.getElementById('display-score').innerText = totalScore;
+            document.getElementById('display-level').innerText = `${unlockedLevel}/5`;
+
+            for (let i = 1; i <= 5; i++) {
+                let btn = document.getElementById(`btn-lvl-${i}`);
+                let star = document.getElementById(`star-lvl-${i}`);
+
+                if (i <= unlockedLevel) {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('cursor-pointer', 'hover:border-emerald-400');
+                    if (scores[i] > 0) {
+                        star.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i> <span class="text-xs text-white">(${scores[i]} pts)</span>`;
+                    }
+                } else {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        function selectLevel(lvl) {
+            if (lvl > unlockedLevel) return;
+            currentLevel = lvl;
+            userSelections = {};
+            
+            document.getElementById('screen-level-map').classList.add('hidden');
+            document.getElementById('screen-quiz').classList.remove('hidden');
+
+            renderQuiz();
+        }
+
+        function backToMap() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-level-map').classList.remove('hidden');
+            updateLevelMap();
+        }
+
+        function renderQuiz() {
+            const data = levelQuestions[currentLevel];
+            document.getElementById('quiz-level-title').innerText = data.title;
+            document.getElementById('quiz-type-badge').innerText = data.badge;
+            document.getElementById('quiz-progress').innerText = `${currentLevel}/5`;
+            document.getElementById('question-text').innerHTML = data.question;
+
+            const fbBox = document.getElementById('feedback-box');
+            fbBox.classList.add('hidden');
+
+            const container = document.getElementById('answer-container');
+            container.innerHTML = '';
+
+            if (data.type === 'single' || data.type === 'boolean') {
+                data.options.forEach((opt, idx) => {
+                    let optBtn = document.createElement('div');
+                    optBtn.className = "p-4 rounded-xl border border-white/20 bg-slate-800/60 hover:bg-emerald-900/40 cursor-pointer transition flex items-center gap-3";
+                    optBtn.onclick = () => selectSingleOption(idx, optBtn);
+                    optBtn.innerHTML = `
+                        <div class="w-6 h-6 rounded-full border-2 border-emerald-400 flex items-center justify-center text-xs font-bold font-game">
+                            ${String.fromCharCode(65 + idx)}
+                        </div>
+                        <div class="text-sm text-slate-100">${opt}</div>
+                    `;
+                    container.appendChild(optBtn);
+                });
+            } else if (data.type === 'multiple') {
+                data.options.forEach((opt, idx) => {
+                    let optBtn = document.createElement('div');
+                    optBtn.className = "p-4 rounded-xl border border-white/20 bg-slate-800/60 hover:bg-emerald-900/40 cursor-pointer transition flex items-center gap-3";
+                    optBtn.onclick = () => toggleMultipleOption(idx, optBtn);
+                    optBtn.innerHTML = `
+                        <div class="w-6 h-6 rounded-md border-2 border-emerald-400 flex items-center justify-center text-xs font-bold font-game">
+                            <i class="fa-solid fa-check hidden"></i>
+                        </div>
+                        <div class="text-sm text-slate-100">${opt}</div>
+                    `;
+                    container.appendChild(optBtn);
+                });
+            } else if (data.type === 'matching') {
+                data.pairs.forEach((pair, idx) => {
+                    let pairDiv = document.createElement('div');
+                    pairDiv.className = "p-4 rounded-xl border border-white/20 bg-slate-800/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-3";
+                    
+                    let selectHTML = `<select onchange="selectPairOption(${idx}, this.value)" class="bg-slate-900 border border-emerald-400 text-emerald-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                        <option value="">-- Pilih Jawaban --</option>`;
+                    pair.options.forEach(o => {
+                        selectHTML += `<option value="${o}">${o}</option>`;
+                    });
+                    selectHTML += `</select>`;
+
+                    pairDiv.innerHTML = `
+                        <span class="text-sm font-medium text-emerald-200">${pair.label}</span>
+                        ${selectHTML}
+                    `;
+                    container.appendChild(pairDiv);
+                });
+            }
+        }
+
+        function selectSingleOption(index, element) {
+            userSelections.single = index;
+            document.querySelectorAll('#answer-container > div').forEach(el => {
+                el.classList.remove('border-emerald-400', 'bg-emerald-950/60');
+            });
+            element.classList.add('border-emerald-400', 'bg-emerald-950/60');
+        }
+
+        function toggleMultipleOption(index, element) {
+            if (!userSelections.multiple) userSelections.multiple = [];
+            
+            const pos = userSelections.multiple.indexOf(index);
+            const icon = element.querySelector('.fa-check');
+
+            if (pos > -1) {
+                userSelections.multiple.splice(pos, 1);
+                element.classList.remove('border-emerald-400', 'bg-emerald-950/60');
+                icon.classList.add('hidden');
+            } else {
+                userSelections.multiple.push(index);
+                element.classList.add('border-emerald-400', 'bg-emerald-950/60');
+                icon.classList.remove('hidden');
+            }
+        }
+
+        function selectPairOption(pairIndex, value) {
+            if (!userSelections.pairs) userSelections.pairs = {};
+            userSelections.pairs[pairIndex] = value;
+        }
+
+        function checkAnswer() {
+            const data = levelQuestions[currentLevel];
+            let isCorrect = false;
+
+            if (data.type === 'single' || data.type === 'boolean') {
+                if (userSelections.single === undefined) {
+                    alert("Pilih salah satu jawaban terlebih dahulu!");
+                    return;
+                }
+                isCorrect = userSelections.single === data.correct;
+            } else if (data.type === 'multiple') {
+                if (!userSelections.multiple || userSelections.multiple.length === 0) {
+                    alert("Pilih setidaknya satu jawaban!");
+                    return;
+                }
+                const sortedUser = [...userSelections.multiple].sort();
+                const sortedCorrect = [...data.correct].sort();
+                isCorrect = JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect);
+            } else if (data.type === 'matching') {
+                if (!userSelections.pairs || Object.keys(userSelections.pairs).length < data.pairs.length) {
+                    alert("Lengkapi semua jodohkan pasangan di atas!");
+                    return;
+                }
+                isCorrect = data.pairs.every((pair, idx) => userSelections.pairs[idx] === pair.correct);
+            }
+
+            const fbBox = document.getElementById('feedback-box');
+            fbBox.classList.remove('hidden', 'bg-emerald-500/20', 'border-emerald-400', 'text-emerald-200', 'bg-rose-500/20', 'border-rose-400', 'text-rose-200');
+
+            if (isCorrect) {
+                scores[currentLevel] = 20;
+                fbBox.classList.add('bg-emerald-500/20', 'border', 'border-emerald-400', 'text-emerald-200');
+                fbBox.innerHTML = `<i class="fa-solid fa-circle-check mr-2 text-lg"></i> <b>Luar Biasa! Jawabanmu Tepat!</b><br><span class="text-xs opacity-90">${data.explanation}</span>`;
+                
+                if (currentLevel === unlockedLevel && unlockedLevel < 5) {
+                    unlockedLevel++;
+                }
+
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.8 } });
+            } else {
+                scores[currentLevel] = 5;
+                fbBox.classList.add('bg-rose-500/20', 'border', 'border-rose-400', 'text-rose-200');
+                fbBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2 text-lg"></i> <b>Kurang Tepat!</b><br><span class="text-xs opacity-90">${data.explanation}</span>`;
+            }
+
+            const btnSubmit = document.getElementById('btn-submit-answer');
+            if (currentLevel < 5) {
+                btnSubmit.innerHTML = `Misi Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>`;
+                btnSubmit.onclick = () => {
+                    btnSubmit.innerHTML = `Kirim Jawaban <i class="fa-solid fa-paper-plane ml-1"></i>`;
+                    btnSubmit.onclick = checkAnswer;
+                    selectLevel(currentLevel + 1);
+                };
+            } else {
+                btnSubmit.innerHTML = `Lihat Sertifikat <i class="fa-solid fa-trophy ml-1"></i>`;
+                btnSubmit.onclick = showCertificate;
+            }
+        }
+
+        function showCertificate() {
+            document.getElementById('screen-quiz').classList.add('hidden');
+            document.getElementById('screen-level-map').classList.add('hidden');
+            document.getElementById('game-stats').classList.add('hidden');
+            document.getElementById('screen-certificate').classList.remove('hidden');
+
+            const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+
+            document.getElementById('cert-name').innerText = studentData.nama;
+            document.getElementById('cert-class').innerText = `Kelas: ${studentData.kelas}`;
+            document.getElementById('cert-score').innerText = `${totalScore} / 100`;
+
+            let predicate = '';
+            let predColor = '';
+            if (totalScore >= 85) {
+                predicate = 'AMAT BAIK';
+                predColor = 'text-emerald-600';
+            } else if (totalScore >= 65) {
+                predicate = 'BAIK';
+                predColor = 'text-amber-600';
+            } else {
+                predicate = 'CUKUP';
+                predColor = 'text-cyan-600';
+            }
+
+            const predEl = document.getElementById('cert-predicate');
+            predEl.innerText = predicate;
+            predEl.className = `text-2xl font-game ${predColor}`;
+
+            const today = new Date();
+            document.getElementById('cert-date').innerText = `Tanggal: ${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+        }
+
+        function restartGame() {
+            scores = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            currentLevel = 1;
+            unlockedLevel = 1;
+            document.getElementById('screen-certificate').classList.add('hidden');
+            document.getElementById('screen-register').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
